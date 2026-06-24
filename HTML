@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Свадебный планировщик рассадки</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'Georgia', 'Times New Roman', serif;
+      background: #f9f3e9;
+      background-image: radial-gradient(circle at 10% 20%, rgba(255, 235, 215, 0.7) 0%, transparent 30%),
+                        radial-gradient(circle at 90% 80%, rgba(245, 220, 200, 0.6) 0%, transparent 40%);
+      min-height: 100vh;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    .app-container {
+      max-width: 1300px;
+      width: 100%;
+      background: rgba(255, 255, 250, 0.8);
+      backdrop-filter: blur(12px);
+      border-radius: 30px;
+      box-shadow: 0 30px 50px rgba(0, 0, 0, 0.12), 0 10px 20px rgba(0, 0, 0, 0.06);
+      padding: 15px 12px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      border: 1px solid rgba(255, 245, 235, 0.7);
+    }
+
+    h1 {
+      text-align: center;
+      font-size: clamp(1.8rem, 5vw, 2.8rem);
+      font-weight: 400;
+      letter-spacing: 3px;
+      color: #5b4a3a;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+      font-family: 'Georgia', serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    h1 span {
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      opacity: 0.8;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      background: #fffaf4;
+      border-radius: 30px;
+      padding: 10px 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+      border: 1px solid #ede3d6;
+      gap: 12px;
+    }
+
+    .guest-pool-area {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      flex: 2;
+      min-width: 250px;
+    }
+
+    .guest-pool-label {
+      font-weight: 500;
+      color: #5e4c3b;
+      font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .guest-badges {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      flex: 1;
+    }
+
+    .guest-badge {
+      background: #e7d7c4;
+      color: #3e3326;
+      padding: 4px 12px;
+      border-radius: 25px;
+      font-weight: 500;
+      font-size: clamp(0.75rem, 2vw, 0.9rem);
+      cursor: grab;
+      user-select: none;
+      transition: 0.15s;
+      border: 1px solid #cfbc9f;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      letter-spacing: 0.3px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+      touch-action: none;
+    }
+    .guest-badge:active {
+      cursor: grabbing;
+      opacity: 0.8;
+    }
+    .guest-badge.dragging {
+      opacity: 0.4;
+      transform: scale(0.95);
+    }
+
+    .add-guest-form {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .add-guest-form input {
+      border: 1px solid #d6c6b2;
+      border-radius: 25px;
+      padding: 6px 12px;
+      font-size: clamp(0.8rem, 2vw, 0.9rem);
+      background: white;
+      outline: none;
+      width: 120px;
+      transition: 0.2s;
+      min-width: 90px;
+    }
+    .add-guest-form input:focus {
+      border-color: #b2967a;
+      box-shadow: 0 0 0 2px rgba(178, 150, 122, 0.2);
+    }
+
+    .btn {
+      background: #cdbc9f;
+      border: none;
+      color: #3a3027;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: clamp(0.75rem, 2vw, 0.9rem);
+      transition: 0.2s;
+      background: #d9c7ad;
+      letter-spacing: 0.4px;
+      border: 1px solid #b7a083;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+      touch-action: manipulation;
+    }
+    .btn:hover {
+      background: #c8af8b;
+      border-color: #9b8970;
+    }
+    .btn:active {
+      transform: scale(0.96);
+    }
+    .btn-primary {
+      background: #b3926c;
+      color: white;
+      border-color: #8b6f50;
+    }
+    .btn-primary:hover {
+      background: #9e7d58;
+    }
+
+    .controls-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .table-type-selector {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: #f5ede2;
+      padding: 5px 10px;
+      border-radius: 25px;
+    }
+    .table-type-selector label {
+      font-size: 0.85rem;
+      color: #5e4c3b;
+      font-weight: 500;
+    }
+    .table-type-selector select {
+      border: 1px solid #cfbc9f;
+      border-radius: 20px;
+      padding: 5px 10px;
+      font-size: 0.85rem;
+      background: white;
+      outline: none;
+    }
+
+    .tables-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 5px;
+    }
+
+    /* Карточка стола */
+    .table-card {
+      background: #fefaf3;
+      border-radius: 25px;
+      padding: 15px 12px 18px;
+      min-width: 200px;
+      max-width: 350px;
+      flex: 1 0 200px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.06);
+      border: 2px solid #e7d7c4;
+      transition: 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #fffbf5;
+    }
+
+    .table-header {
+      display: flex;
+      width: 100%;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      font-weight: 600;
+      color: #4a3929;
+      font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+      letter-spacing: 0.5px;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .table-name {
+      background: #ede0d1;
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+    }
+    .delete-table-btn {
+      background: none;
+      border: none;
+      font-size: 1.3rem;
+      cursor: pointer;
+      color: #b29175;
+      transition: 0.2s;
+      line-height: 1;
+      padding: 4px;
+    }
+    .delete-table-btn:hover {
+      color: #8b5a3a;
+      transform: scale(1.1);
+    }
+
+    /* Контейнер мест – форма задается классом */
+    .seats-container {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 70px;
+      background: rgba(245, 236, 224, 0.5);
+      border-radius: 20px;
+      padding: 12px 8px;
+      width: 100%;
+      transition: background 0.2s, border-radius 0.3s;
+    }
+    .seats-container.drag-over {
+      background: rgba(214, 189, 152, 0.5);
+      box-shadow: inset 0 0 0 2px #b3926c;
+    }
+
+    /* Формы столов */
+    .shape-round {
+      border-radius: 50%;
+      aspect-ratio: 1 / 1;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+    }
+    .shape-rectangle {
+      border-radius: 12px;
+      flex-direction: row;
+    }
+    .shape-u-shape {
+      border-radius: 12px;
+      display: grid;
+      grid-template-areas:
+        "left top top right"
+        "left . . right"
+        "left bottom bottom right";
+      grid-template-columns: 1fr 2fr 2fr 1fr;
+      grid-template-rows: auto auto auto;
+      gap: 6px;
+      padding: 8px;
+    }
+
+    .seat-item {
+      background: #f3ede5;
+      border-radius: 50%;
+      width: 55px;
+      height: 55px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: #3d3224;
+      border: 2px dashed #ccb699;
+      background: white;
+      cursor: pointer;
+      transition: 0.2s;
+      word-break: break-word;
+      padding: 4px;
+      line-height: 1.2;
+      box-shadow: 0 3px 5px rgba(0,0,0,0.04);
+      touch-action: manipulation;
+    }
+    .seat-item.occupied {
+      background: #dacbb8;
+      border: 2px solid #a7886b;
+      font-weight: 600;
+      cursor: grab;
+    }
+    .seat-item:active {
+      cursor: grabbing;
+      transform: scale(0.95);
+    }
+
+    .footer-note {
+      text-align: center;
+      color: #aa9987;
+      font-size: clamp(0.7rem, 2vw, 0.9rem);
+      margin-top: 5px;
+      padding: 0 8px;
+    }
+
+    /* Мобильная адаптация */
+    @media (max-width: 768px) {
+      .app-container {
+        padding: 10px 8px 15px;
+        border-radius: 20px;
+        gap: 14px;
+      }
+      .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 8px 12px;
+        gap: 8px;
+      }
+      .guest-pool-area {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .guest-badges {
+        gap: 5px;
+      }
+      .guest-badge {
+        padding: 4px 10px;
+        font-size: 0.8rem;
+      }
+      .table-card {
+        min-width: 160px;
+        max-width: 100%;
+        flex: 1 0 150px;
+        padding: 12px 8px;
+      }
+      .seats-container {
+        gap: 6px;
+        padding: 10px 5px;
+      }
+      .seat-item {
+        width: 45px;
+        height: 45px;
+        font-size: 0.65rem;
+      }
+      .controls-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .add-guest-form {
+        width: 100%;
+      }
+      .add-guest-form input {
+        flex: 1;
+        width: auto;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .table-card {
+        min-width: 140px;
+        flex: 1 0 140px;
+      }
+      .seat-item {
+        width: 40px;
+        height: 40px;
+        font-size: 0.6rem;
+      }
+      .btn {
+        padding: 5px 10px;
+        font-size: 0.75rem;
+      }
+      .table-type-selector {
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="app-container">
+  <h1>
+    <span>🥂</span> Рассадка гостей <span>💍</span>
+  </h1>
+
+  <!-- Панель управления -->
+  <div class="toolbar">
+    <div class="guest-pool-area">
+      <span class="guest-pool-label">👥 Гости:</span>
+      <div class="guest-badges" id="guestPoolContainer"></div>
+      <div class="add-guest-form">
+        <input type="text" id="newGuestName" placeholder="Имя гостя" maxlength="20" autocomplete="off" />
+        <button class="btn" id="addGuestBtn">➕</button>
+      </div>
+    </div>
+    <div class="controls-row">
+      <div class="table-type-selector">
+        <label for="tableShapeSelect">Форма стола:</label>
+        <select id="tableShapeSelect">
+          <option value="round">⚪ Круглый</option>
+          <option value="rectangle">⬜ Прямоугольный</option>
+          <option value="u-shape">🔲 П-образный</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" id="addTableBtn">🪑 Добавить стол</button>
+    </div>
+  </div>
+
+  <!-- Сетка столов -->
+  <div class="tables-grid" id="tablesGrid"></div>
+
+  <div class="footer-note">
+    ✨ Перетаскивайте гостей на места. Нажмите на гостя за столом, чтобы вернуть его в список.
+  </div>
+</div>
+
+<script>
+  (function() {
+    // ---------- СОСТОЯНИЕ ----------
+    let unseatedGuests = ["Анна", "Максим", "Ольга", "Дмитрий", "Екатерина", "Алексей", "Мария", "Иван"];
+    
+    // Столы: массив объектов { id, name, shape: 'round'|'rectangle'|'u-shape', seats: массив строк }
+    let tables = [
+      { id: 't1', name: 'Стол 1', shape: 'round', seats: Array(6).fill(null) },
+      { id: 't2', name: 'Стол 2', shape: 'rectangle', seats: Array(6).fill(null) },
+    ];
+
+    let draggedGuest = null;
+    let draggedFromType = null;
+    let draggedFromTableId = null;
+    let draggedSeatIndex = null;
+
+    // DOM элементы
+    const guestPoolContainer = document.getElementById('guestPoolContainer');
+    const tablesGrid = document.getElementById('tablesGrid');
+    const newGuestNameInput = document.getElementById('newGuestName');
+    const addGuestBtn = document.getElementById('addGuestBtn');
+    const addTableBtn = document.getElementById('addTableBtn');
+    const tableShapeSelect = document.getElementById('tableShapeSelect');
+
+    // ---------- РЕНДЕРИНГ ----------
+    function renderGuestPool() {
+      guestPoolContainer.innerHTML = '';
+      if (unseatedGuests.length === 0) {
+        guestPoolContainer.innerHTML = '<span style="color: #b7a48b; font-style: italic; padding: 4px; font-size: 0.85rem;">Все рассажены</span>';
+        return;
+      }
+      unseatedGuests.forEach(guest => {
+        const badge = document.createElement('div');
+        badge.className = 'guest-badge';
+        badge.textContent = guest;
+        badge.setAttribute('draggable', 'true');
+        badge.setAttribute('data-guest', guest);
+        badge.setAttribute('data-source', 'pool');
+        badge.addEventListener('dragstart', handleDragStart);
+        badge.addEventListener('dragend', handleDragEnd);
+        // Touch support
+        badge.addEventListener('touchstart', touchStartHandler, {passive: false});
+        badge.addEventListener('touchmove', touchMoveHandler, {passive: false});
+        badge.addEventListener('touchend', touchEndHandler);
+        guestPoolContainer.appendChild(badge);
+      });
+    }
+
+    function getSeatCapacity(shape) {
+      if (shape === 'round') return 6;
+      if (shape === 'rectangle') return 6;
+      if (shape === 'u-shape') return 8;
+      return 6;
+    }
+
+    function renderTables() {
+      tablesGrid.innerHTML = '';
+      tables.forEach(table => {
+        const card = document.createElement('div');
+        card.className = 'table-card';
+        card.setAttribute('data-table-id', table.id);
+
+        const header = document.createElement('div');
+        header.className = 'table-header';
+        const shapeIcon = table.shape === 'round' ? '⚪' : (table.shape === 'rectangle' ? '⬜' : '🔲');
+        header.innerHTML = `
+          <span class="table-name">${shapeIcon} ${table.name}</span>
+          <button class="delete-table-btn" data-table-id="${table.id}" title="Удалить стол">✕</button>
+        `;
+
+        const seatsDiv = document.createElement('div');
+        seatsDiv.className = 'seats-container';
+        // Добавляем класс формы
+        if (table.shape === 'round') seatsDiv.classList.add('shape-round');
+        else if (table.shape === 'u-shape') seatsDiv.classList.add('shape-u-shape');
+        else seatsDiv.classList.add('shape-rectangle');
+        
+        seatsDiv.setAttribute('data-table-id', table.id);
+        seatsDiv.addEventListener('dragover', handleDragOver);
+        seatsDiv.addEventListener('dragleave', handleDragLeave);
+        seatsDiv.addEventListener('drop', handleDrop);
+
+        // Для П-образной формы задаем грид-области
+        if (table.shape === 'u-shape') {
+          const positions = ['left', 'top', 'top', 'right', 'left', 'bottom', 'bottom', 'right'];
+          table.seats.forEach((guest, index) => {
+            const seat = createSeatElement(guest, table.id, index);
+            if (index < positions.length) {
+              seat.style.gridArea = positions[index];
+            }
+            seatsDiv.appendChild(seat);
+          });
+        } else {
+          table.seats.forEach((guest, index) => {
+            const seat = createSeatElement(guest, table.id, index);
+            seatsDiv.appendChild(seat);
+          });
+        }
+
+        card.appendChild(header);
+        card.appendChild(seatsDiv);
+
+        const deleteBtn = header.querySelector('.delete-table-btn');
+        deleteBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteTable(table.id);
+        });
+
+        tablesGrid.appendChild(card);
+      });
+    }
+
+    function createSeatElement(guest, tableId, index) {
+      const seat = document.createElement('div');
+      seat.className = 'seat-item' + (guest ? ' occupied' : '');
+      seat.textContent = guest || '🪑';
+      seat.setAttribute('data-table-id', tableId);
+      seat.setAttribute('data-seat-index', index);
+      
+      if (guest) {
+        seat.setAttribute('draggable', 'true');
+        seat.setAttribute('data-guest', guest);
+        seat.setAttribute('data-source', 'table');
+        seat.addEventListener('dragstart', handleDragStart);
+        seat.addEventListener('dragend', handleDragEnd);
+        seat.addEventListener('touchstart', touchStartHandler, {passive: false});
+        seat.addEventListener('touchmove', touchMoveHandler, {passive: false});
+        seat.addEventListener('touchend', touchEndHandler);
+      }
+
+      seat.addEventListener('click', (e) => {
+        if (draggedGuest) return;
+        const tId = seat.getAttribute('data-table-id');
+        const sIndex = parseInt(seat.getAttribute('data-seat-index'), 10);
+        const currentGuest = getGuestFromSeat(tId, sIndex);
+        if (currentGuest) {
+          removeGuestFromSeat(tId, sIndex);
+          unseatedGuests.push(currentGuest);
+          renderAll();
+        }
+      });
+
+      return seat;
+    }
+
+    function renderAll() {
+      renderGuestPool();
+      renderTables();
+    }
+
+    // ---------- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ----------
+    function getGuestFromSeat(tableId, seatIndex) {
+      const table = tables.find(t => t.id === tableId);
+      if (!table || seatIndex < 0 || seatIndex >= table.seats.length) return null;
+      return table.seats[seatIndex] || null;
+    }
+
+    function setGuestToSeat(tableId, seatIndex, guestName) {
+      const table = tables.find(t => t.id === tableId);
+      if (table && seatIndex >= 0 && seatIndex < table.seats.length) {
+        table.seats[seatIndex] = guestName;
+      }
+    }
+
+    function removeGuestFromSeat(tableId, seatIndex) {
+      setGuestToSeat(tableId, seatIndex, null);
+    }
+
+    function deleteTable(tableId) {
+      const table = tables.find(t => t.id === tableId);
+      if (table) {
+        table.seats.forEach(guest => {
+          if (guest) unseatedGuests.push(guest);
+        });
+        tables = tables.filter(t => t.id !== tableId);
+        renderAll();
+      }
+    }
+
+    function addNewTable() {
+      const shape = tableShapeSelect.value;
+      const capacity = getSeatCapacity(shape);
+      const newId = 't' + Date.now() + Math.random().toString(36).substr(2, 4);
+      const tableNumber = tables.length + 1;
+      const shapeNames = { round: 'Круглый', rectangle: 'Прямоугольный', 'u-shape': 'П-образный' };
+      tables.push({
+        id: newId,
+        name: `${shapeNames[shape]} ${tableNumber}`,
+        shape: shape,
+        seats: Array(capacity).fill(null)
+      });
+      renderAll();
+    }
+
+    function addNewGuest(name) {
+      const trimmed = name.trim();
+      if (trimmed === '') {
+        alert('Введите имя гостя');
+        return false;
+      }
+      if (unseatedGuests.includes(trimmed) || isGuestSeatedAnywhere(trimmed)) {
+        alert('Гость с таким именем уже есть');
+        return false;
+      }
+      unseatedGuests.push(trimmed);
+      renderAll();
+      return true;
+    }
+
+    function isGuestSeatedAnywhere(guestName) {
+      return tables.some(table => table.seats.includes(guestName));
+    }
+
+    // ---------- DRAG & DROP (мышь) ----------
+    function handleDragStart(e) {
+      const el = e.target;
+      const guest = el.getAttribute('data-guest');
+      const source = el.getAttribute('data-source');
+      if (!guest) return;
+      draggedGuest = guest;
+      draggedFromType = source;
+      if (source === 'table') {
+        draggedFromTableId = el.getAttribute('data-table-id');
+        draggedSeatIndex = parseInt(el.getAttribute('data-seat-index'), 10);
+      } else {
+        draggedFromTableId = null;
+        draggedSeatIndex = null;
+      }
+      el.classList.add('dragging');
+      e.dataTransfer.setData('text/plain', guest);
+      e.dataTransfer.effectAllowed = 'move';
+    }
+
+    function handleDragEnd(e) {
+      e.target.classList.remove('dragging');
+      resetDragState();
+      document.querySelectorAll('.seats-container').forEach(c => c.classList.remove('drag-over'));
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      e.currentTarget.classList.add('drag-over');
+    }
+
+    function handleDragLeave(e) {
+      e.currentTarget.classList.remove('drag-over');
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      const container = e.currentTarget;
+      container.classList.remove('drag-over');
+      const targetTableId = container.getAttribute('data-table-id');
+      if (!targetTableId || !draggedGuest) return;
+
+      if (draggedFromType === 'table' && draggedFromTableId === targetTableId) {
+        renderAll();
+        return;
+      }
+
+      const table = tables.find(t => t.id === targetTableId);
+      if (!table) return;
+      const freeSeatIndex = table.seats.findIndex(seat => seat === null);
+      if (freeSeatIndex === -1) {
+        alert('Нет свободных мест за этим столом!');
+        renderAll();
+        return;
+      }
+
+      if (draggedFromType === 'pool') {
+        unseatedGuests = unseatedGuests.filter(g => g !== draggedGuest);
+      } else if (draggedFromType === 'table' && draggedFromTableId && draggedSeatIndex !== null) {
+        removeGuestFromSeat(draggedFromTableId, draggedSeatIndex);
+      }
+
+      setGuestToSeat(targetTableId, freeSeatIndex, draggedGuest);
+      resetDragState();
+      renderAll();
+    }
+
+    function resetDragState() {
+      draggedGuest = null;
+      draggedFromType = null;
+      draggedFromTableId = null;
+      draggedSeatIndex = null;
+    }
+
+    // ---------- TOUCH SUPPORT ----------
+    let touchDragElement = null;
+    let touchStartX, touchStartY;
+    let touchClone = null;
+
+    function touchStartHandler(e) {
+      const el = e.target.closest('[data-guest]');
+      if (!el) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      touchStartX = touch.clientX;
+      touchStartY = touch.clientY;
+      touchDragElement = el;
+      
+      const guest = el.getAttribute('data-guest');
+      const source = el.getAttribute('data-source');
+      draggedGuest = guest;
+      draggedFromType = source;
+      if (source === 'table') {
+        draggedFromTableId = el.getAttribute('data-table-id');
+        draggedSeatIndex = parseInt(el.getAttribute('data-seat-index'), 10);
+      } else {
+        draggedFromTableId = null;
+        draggedSeatIndex = null;
+      }
+    }
+
+    function touchMoveHandler(e) {
+      if (!touchDragElement) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      const moveX = touch.clientX - touchStartX;
+      const moveY = touch.clientY - touchStartY;
+      
+      if (!touchClone && (Math.abs(moveX) > 10 || Math.abs(moveY) > 10)) {
+        touchClone = touchDragElement.cloneNode(true);
+        touchClone.style.position = 'fixed';
+        touchClone.style.zIndex = '9999';
+        touchClone.style.opacity = '0.8';
+        touchClone.style.pointerEvents = 'none';
+        touchClone.style.transform = 'scale(1.1)';
+        document.body.appendChild(touchClone);
+        touchDragElement.classList.add('dragging');
+      }
+      
+      if (touchClone) {
+        touchClone.style.left = (touch.clientX - 30) + 'px';
+        touchClone.style.top = (touch.clientY - 30) + 'px';
+        
+        // Подсветка контейнера под пальцем
+        const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+        document.querySelectorAll('.seats-container').forEach(c => c.classList.remove('drag-over'));
+        if (elemBelow) {
+          const container = elemBelow.closest('.seats-container');
+          if (container) container.classList.add('drag-over');
+        }
+      }
+    }
+
+    function touchEndHandler(e) {
+      if (!touchDragElement) return;
+      e.preventDefault();
+      
+      if (touchClone) {
+        const touch = e.changedTouches[0];
+        const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+        document.querySelectorAll('.seats-container').forEach(c => c.classList.remove('drag-over'));
+        
+        if (elemBelow) {
+          const container = elemBelow.closest('.seats-container');
+          if (container && draggedGuest) {
+            const targetTableId = container.getAttribute('data-table-id');
+            if (targetTableId && !(draggedFromType === 'table' && draggedFromTableId === targetTableId)) {
+              const table = tables.find(t => t.id === targetTableId);
+              if (table) {
+                const freeSeatIndex = table.seats.findIndex(seat => seat === null);
+                if (freeSeatIndex !== -1) {
+                  if (draggedFromType === 'pool') {
+                    unseatedGuests = unseatedGuests.filter(g => g !== draggedGuest);
+                  } else if (draggedFromType === 'table' && draggedFromTableId && draggedSeatIndex !== null) {
+                    removeGuestFromSeat(draggedFromTableId, draggedSeatIndex);
+                  }
+                  setGuestToSeat(targetTableId, freeSeatIndex, draggedGuest);
+                }
+              }
+            }
+          }
+        }
+        
+        document.body.removeChild(touchClone);
+        touchClone = null;
+      }
+      
+      if (touchDragElement) {
+        touchDragElement.classList.remove('dragging');
+      }
+      touchDragElement = null;
+      resetDragState();
+      renderAll();
+    }
+
+    // ---------- КНОПКИ ----------
+    addGuestBtn.addEventListener('click', () => {
+      if (addNewGuest(newGuestNameInput.value)) {
+        newGuestNameInput.value = '';
+      }
+    });
+    newGuestNameInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        if (addNewGuest(newGuestNameInput.value)) {
+          newGuestNameInput.value = '';
+        }
+      }
+    });
+    addTableBtn.addEventListener('click', addNewTable);
+
+    // Предотвращаем стандартное поведение
+    window.addEventListener('dragover', e => e.preventDefault());
+    window.addEventListener('drop', e => e.preventDefault());
+
+    // Инициализация
+    renderAll();
+  })();
+</script>
+</body>
+</html>

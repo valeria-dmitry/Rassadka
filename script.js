@@ -235,6 +235,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (moveMode) return;
         openTableModal(table.id);
       });
+      // Долгий тап для телефона — открыть настройки стола
+      let tableTapTimer;
+      obj.addEventListener('touchstart', (e) => {
+        if (e.target.closest('.seat-dot')) return;
+        tableTapTimer = setTimeout(() => {
+          if (moveMode) return;
+          openTableModal(table.id);
+        }, 600);
+      }, { passive: true });
+      obj.addEventListener('touchend', () => clearTimeout(tableTapTimer));
+      obj.addEventListener('touchmove', () => clearTimeout(tableTapTimer));
 
       hallCanvas.appendChild(obj);
     });
@@ -407,15 +418,27 @@ document.addEventListener('DOMContentLoaded', () => {
       const angle = (index/capacity)*2*Math.PI - Math.PI/2;
       return { x: cx + r*Math.cos(angle), y: cy + r*Math.sin(angle) };
     }
-    if (type === 'rect') {
-      const leftCount = Math.ceil(capacity/2), rightCount = capacity - leftCount;
+        if (type === 'rect') {
+      // Особый случай: 2 гостя — сидят сверху рядом
+      if (capacity === 2) {
+        const positions = [
+          { x: w * 0.33, y: -12 },
+          { x: w * 0.67, y: -12 }
+        ];
+        return positions[index] || { x: w/2, y: -12 };
+      }
+      
+      // 3+ гостей: распределение по длинным сторонам (слева и справа)
+      const leftCount = Math.ceil(capacity / 2);
+      const rightCount = capacity - leftCount;
+
       if (index < leftCount) {
-        const y = h/(leftCount+1)*(index+1);
+        const y = h / (leftCount + 1) * (index + 1);
         return { x: -12, y };
       } else {
         const i = index - leftCount;
-        const y = h/(rightCount+1)*(i+1);
-        return { x: w+12, y };
+        const y = h / (rightCount + 1) * (i + 1);
+        return { x: w + 12, y };
       }
     }
     if (type === 'square') {

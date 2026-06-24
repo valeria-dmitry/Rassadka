@@ -191,6 +191,22 @@ h2, h3 {
   text-align: center;
 }
 
+.table-scale-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.scale-divider {
+  color: #CFBC9F;
+  font-size: 1.2rem;
+  margin: 0 2px;
+}
+.scale-label {
+  font-size: 0.75rem;
+  color: #8C7B6E;
+  font-weight: 500;
+}
+
 /* ===== CANVAS ===== */
 .canvas-wrapper {
   flex: 1;
@@ -220,6 +236,16 @@ h2, h3 {
 }
 .table-object:active { cursor: grabbing; }
 .table-object.dragging-table { opacity: 0.85; z-index: 100; }
+.table-object.selected {
+  z-index: 50;
+}
+.table-object.selected .table-round,
+.table-object.selected .table-rect,
+.table-object.selected .table-square,
+.table-object.selected .table-ushape-inner {
+  border-color: #B3926C;
+  box-shadow: 0 0 0 4px rgba(179,146,108,0.25), 0 8px 22px rgba(0,0,0,0.1);
+}
 
 .table-visual {
   position: relative;
@@ -229,8 +255,6 @@ h2, h3 {
 }
 
 .table-round {
-  width: 140px;
-  height: 140px;
   border-radius: 50%;
   background: #FFFBF5;
   border: 3px solid #D4C0A8;
@@ -238,8 +262,6 @@ h2, h3 {
 }
 
 .table-rect {
-  width: 200px;
-  height: 80px;
   border-radius: 12px;
   background: #FFFBF5;
   border: 3px solid #D4C0A8;
@@ -247,8 +269,6 @@ h2, h3 {
 }
 
 .table-square {
-  width: 130px;
-  height: 130px;
   border-radius: 12px;
   background: #FFFBF5;
   border: 3px solid #D4C0A8;
@@ -256,26 +276,19 @@ h2, h3 {
 }
 
 .table-ushape {
-  width: 180px;
-  height: 140px;
-  border: 3px solid #D4C0A8;
-  border-radius: 12px;
   background: transparent;
   position: relative;
   box-shadow: none;
 }
-.table-ushape::before {
-  content: '';
+
+.table-ushape-inner {
   position: absolute;
   inset: 0;
   border-radius: 12px;
-  border: 3px solid transparent;
-  border-top: 3px solid #D4C0A8;
-  border-left: 3px solid #D4C0A8;
-  border-right: 3px solid #D4C0A8;
   background: #FFFBF5;
-  clip-path: polygon(0% 0%, 100% 0%, 100% 35%, 75% 35%, 75% 100%, 25% 100%, 25% 35%, 0% 35%);
+  border: 3px solid #D4C0A8;
   box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  clip-path: polygon(0% 0%, 100% 0%, 100% 35%, 75% 35%, 75% 100%, 25% 100%, 25% 35%, 0% 35%);
 }
 
 .table-label {
@@ -287,6 +300,7 @@ h2, h3 {
   padding: 3px 10px;
   background: rgba(255,255,245,0.8);
   border-radius: 12px;
+  white-space: nowrap;
 }
 
 .load-bar {
@@ -331,9 +345,64 @@ h2, h3 {
   font-weight: 600;
   cursor: grab;
 }
+.seat-dot.occupied:active {
+  cursor: grabbing;
+}
 .seat-dot.highlight {
   border-color: #B3926C;
   box-shadow: 0 0 0 3px rgba(179,146,108,0.3);
+}
+.seat-dot.dragging-seat {
+  opacity: 0.5;
+}
+
+/* ===== TOOLTIP ===== */
+.guest-tooltip {
+  position: fixed;
+  z-index: 2000;
+  background: white;
+  border-radius: 14px;
+  padding: 10px 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  font-size: 0.8rem;
+  max-width: 220px;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  border: 1px solid #E3D9D0;
+}
+.guest-tooltip.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+.guest-tooltip .tooltip-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #3E3A36;
+  margin-bottom: 4px;
+}
+.guest-tooltip .tooltip-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.guest-tooltip .tooltip-tag {
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #E8DED0;
+  color: #5A4A3E;
+}
+.guest-tooltip .tooltip-desc {
+  color: #6B5A4E;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  margin-top: 2px;
+}
+.guest-tooltip .tooltip-table {
+  color: #8C7B6E;
+  font-size: 0.7rem;
+  margin-top: 3px;
 }
 
 /* ===== BUTTONS ===== */

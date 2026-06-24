@@ -11,7 +11,6 @@
 
   <div class="app-layout">
     
-    <!-- Боковая панель гостей -->
     <aside class="sidebar" id="guestSidebar">
       <div class="sidebar-header">
         <h2>👥 Гости</h2>
@@ -41,13 +40,21 @@
             <button class="btn btn-tool btn-shape" data-shape="ushape" title="П-образный">🔳</button>
           </div>
           <div class="zoom-controls">
-            <button class="btn btn-tool" id="zoomOut" title="Уменьшить">➖</button>
+            <button class="btn btn-tool" id="zoomOut" title="Уменьшить всё">➖</button>
             <span class="zoom-label" id="zoomLabel">100%</span>
-            <button class="btn btn-tool" id="zoomIn" title="Увеличить">➕</button>
+            <button class="btn btn-tool" id="zoomIn" title="Увеличить всё">➕</button>
+          </div>
+          <div class="table-scale-controls" id="tableScaleControls" style="display:none;">
+            <span class="scale-divider">|</span>
+            <span class="scale-label">Стол:</span>
+            <button class="btn btn-tool" id="tableScaleOut" title="Уменьшить стол">🔽</button>
+            <span class="zoom-label" id="tableScaleLabel">100%</span>
+            <button class="btn btn-tool" id="tableScaleIn" title="Увеличить стол">🔼</button>
+            <button class="btn btn-tool" id="deselectTableBtn" title="Снять выделение">✕</button>
           </div>
         </div>
         <div class="toolbar-right">
-          <span class="toolbar-hint">🖱 Перетаскивайте столы. Двойной клик по столу — настройки</span>
+          <span class="toolbar-hint">🖱 Двойной клик по столу — настройки. Клик — выделить</span>
         </div>
       </div>
 
@@ -77,7 +84,7 @@
     <div class="modal-card">
       <h3>Настройки стола</h3>
       <label>Название:</label>
-      <input type="text" id="modalTableName" placeholder="Название стола" maxlength="20">
+      <input type="text" id="modalTableName" placeholder="Название стола" maxlength="30">
       <label>Максимум гостей:</label>
       <select id="modalTableCapacity">
         <option value="2">2</option><option value="3">3</option><option value="4">4</option>
@@ -91,6 +98,9 @@
       </div>
     </div>
   </div>
+
+  <!-- Тултип с описанием гостя -->
+  <div class="guest-tooltip hidden" id="guestTooltip"></div>
 
   <script src="script.js"></script>
 </body>

@@ -5,51 +5,85 @@ document.addEventListener('DOMContentLoaded', () => {
   let tables = [];
   let selectedShape = 'round';
   let draggedGuestId = null;
+  let draggedSeatTableId = null;
+  let draggedSeatIndex = null;
   let editingGuestId = null;
   let editingTableId = null;
   let guestIdCounter = 1;
   let tableIdCounter = 1;
   let activeTagFilter = null;
   let zoomLevel = 1;
+  let selectedTableId = null;
+  let tooltipTimeout = null;
 
   // ============ DOM ============
   const guestListContainer = document.getElementById('guestListContainer');
   const tagFilterContainer = document.getElementById('tagFilterContainer');
   const hallCanvas = document.getElementById('hallCanvas');
-  const canvasWrapper = document.getElementById('canvasWrapper');
   const guestSearch = document.getElementById('guestSearch');
   const seatedCount = document.getElementById('seatedCount');
   const totalCount = document.getElementById('totalCount');
   const guestModal = document.getElementById('guestModal');
   const tableModal = document.getElementById('tableModal');
+  const guestTooltip = document.getElementById('guestTooltip');
   const addGuestSidebarBtn = document.getElementById('addGuestSidebarBtn');
   const addTableBtn = document.getElementById('addTableBtn');
   const zoomInBtn = document.getElementById('zoomIn');
   const zoomOutBtn = document.getElementById('zoomOut');
   const zoomLabel = document.getElementById('zoomLabel');
+  const tableScaleInBtn = document.getElementById('tableScaleIn');
+  const tableScaleOutBtn = document.getElementById('tableScaleOut');
+  const tableScaleLabel = document.getElementById('tableScaleLabel');
+  const deselectTableBtn = document.getElementById('deselectTableBtn');
+  const tableScaleControls = document.getElementById('tableScaleControls');
   const shapeButtons = document.querySelectorAll('.btn-shape');
 
   // ============ ДЕМО-ДАННЫЕ ============
   function initDemoData() {
     guests = [
-      { id: guestIdCounter++, name: 'Анна', tags: ['подруга'], description: '', tableId: null },
-      { id: guestIdCounter++, name: 'Максим', tags: ['друг'], description: '', tableId: null },
-      { id: guestIdCounter++, name: 'Ольга', tags: ['родственник'], description: '', tableId: null },
-      { id: guestIdCounter++, name: 'Дмитрий', tags: ['коллега'], description: '', tableId: null },
-      { id: guestIdCounter++, name: 'Екатерина', tags: ['подруга', 'свидетель'], description: '', tableId: null },
-      { id: guestIdCounter++, name: 'Алексей', tags: ['друг', 'свидетель'], description: '', tableId: null },
-      { id: guestIdCounter++, name: 'Мария', tags: ['родственник'], description: '', tableId: null },
-      { id: guestIdCounter++, name: 'Иван', tags: ['родственник'], description: '', tableId: null },
+      { id: guestIdCounter++, name: 'Анна', tags: ['подруга'], description: 'Вегетарианка, аллергия на орехи', tableId: null, seatIndex: null },
+      { id: guestIdCounter++, name: 'Максим', tags: ['друг'], description: 'Любит виски', tableId: null, seatIndex: null },
+      { id: guestIdCounter++, name: 'Ольга', tags: ['родственник'], description: 'Мама невесты', tableId: null, seatIndex: null },
+      { id: guestIdCounter++, name: 'Дмитрий', tags: ['коллега'], description: '', tableId: null, seatIndex: null },
+      { id: guestIdCounter++, name: 'Екатерина', tags: ['подруга', 'свидетель'], description: 'Свидетельница, подготовила тост', tableId: null, seatIndex: null },
+      { id: guestIdCounter++, name: 'Алексей', tags: ['друг', 'свидетель'], description: 'Свидетель, любит танцевать', tableId: null, seatIndex: null },
+      { id: guestIdCounter++, name: 'Мария', tags: ['родственник'], description: 'Сестра жениха', tableId: null, seatIndex: null },
+      { id: guestIdCounter++, name: 'Иван', tags: ['родственник'], description: 'Брат невесты', tableId: null, seatIndex: null },
     ];
     tables = [
-      { id: tableIdCounter++, name: 'Стол 1', type: 'round', capacity: 6, x: 60, y: 60, guestIds: [] },
-      { id: tableIdCounter++, name: 'Стол 2', type: 'rect', capacity: 6, x: 320, y: 60, guestIds: [] },
+      { id: tableIdCounter++, name: 'Молодожёны', type: 'round', capacity: 6, x: 60, y: 60, guestIds: new Array(6).fill(null), scale: 1 },
+      { id: tableIdCounter++, name: 'Друзья', type: 'rect', capacity: 6, x: 340, y: 60, guestIds: new Array(6).fill(null), scale: 1 },
     ];
   }
 
   // ============ ПОМОЩНИКИ ============
   function getGuestById(id) { return guests.find(g => g.id === id); }
   function getTableById(id) { return tables.find(t => t.id === id); }
+
+  function getTableSize(type, capacity, scale) {
+    const s = scale || 1;
+    if (type === 'round') {
+      const base = 100;
+      const extra = Math.max(0, capacity - 4) * 12;
+      return { w: (base + extra) * s, h: (base + extra) * s };
+    }
+    if (type === 'rect') {
+      const baseW = 160;
+      const extraW = Math.max(0, capacity - 4) * 18;
+      return { w: (baseW + extraW) * s, h: 70 * s };
+    }
+    if (type === 'square') {
+      const base = 100;
+      const extra = Math.max(0, capacity - 4) * 12;
+      return { w: (base + extra) * s, h: (base + extra) * s };
+    }
+    if (type === 'ushape') {
+      const baseW = 150;
+      const extraW = Math.max(0, capacity - 4) * 14;
+      return { w: (baseW + extraW) * s, h: 120 * s };
+    }
+    return { w: 140 * s, h: 140 * s };
+  }
 
   // ============ РЕНДЕРИНГ ============
   function renderAll() {
@@ -86,26 +120,36 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       `;
 
-      // Редактирование
       card.querySelector('.guest-card-edit').addEventListener('click', (e) => {
         e.stopPropagation();
         openGuestModal(guest.id);
       });
 
-      // Клик: вернуть из-за стола
+      card.addEventListener('mouseenter', (e) => showTooltip(guest, e.clientX, e.clientY));
+      card.addEventListener('mouseleave', hideTooltip);
+      card.addEventListener('touchstart', (e) => {
+        showTooltip(guest, e.touches[0].clientX, e.touches[0].clientY);
+        setTimeout(hideTooltip, 2500);
+      }, { passive: true });
+
       card.addEventListener('click', () => {
         if (guest.tableId) {
           const table = getTableById(guest.tableId);
-          if (table) table.guestIds = table.guestIds.filter(gid => gid !== guest.id);
+          if (table) {
+            const idx = table.guestIds.indexOf(guest.id);
+            if (idx !== -1) table.guestIds[idx] = null;
+          }
           guest.tableId = null;
+          guest.seatIndex = null;
           renderAll();
         }
       });
 
-      // Drag
       if (!guest.tableId) {
         card.addEventListener('dragstart', (e) => {
           draggedGuestId = guest.id;
+          draggedSeatTableId = null;
+          draggedSeatIndex = null;
           card.classList.add('dragging-card');
           e.dataTransfer.setData('text/plain', guest.id);
         });
@@ -144,35 +188,43 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderCanvas() {
     hallCanvas.innerHTML = '';
     tables.forEach(table => {
+      const isSelected = selectedTableId === table.id;
+      const size = getTableSize(table.type, table.capacity, table.scale);
+
       const obj = document.createElement('div');
-      obj.className = 'table-object';
+      obj.className = 'table-object' + (isSelected ? ' selected' : '');
       obj.style.left = table.x + 'px';
       obj.style.top = table.y + 'px';
       obj.dataset.tableId = table.id;
 
       const visual = document.createElement('div');
       visual.className = 'table-visual';
+      visual.style.width = size.w + 'px';
+      visual.style.height = size.h + 'px';
       
       const inner = document.createElement('div');
       inner.className = `table-${table.type}`;
+      inner.style.width = size.w + 'px';
+      inner.style.height = size.h + 'px';
       inner.style.position = 'relative';
+
+      if (table.type === 'ushape') {
+        const innerU = document.createElement('div');
+        innerU.className = 'table-ushape-inner';
+        inner.appendChild(innerU);
+      }
+
       visual.appendChild(inner);
 
-      // Занятые места (полное имя)
-      table.guestIds.forEach((gid, index) => {
-        const dot = createSeatDot(table, index, gid);
-        inner.appendChild(dot);
-      });
-
-      // Пустые места
-      for (let i = table.guestIds.length; i < table.capacity; i++) {
-        const dot = createSeatDot(table, i, null);
+      for (let i = 0; i < table.capacity; i++) {
+        const guestId = table.guestIds[i] || null;
+        const dot = createSeatDot(table, i, guestId, size);
         inner.appendChild(dot);
       }
 
       const label = document.createElement('div');
       label.className = 'table-label';
-      const filled = table.guestIds.length;
+      const filled = table.guestIds.filter(Boolean).length;
       label.textContent = `${table.name} (${filled}/${table.capacity})`;
       
       const loadBar = document.createElement('div');
@@ -188,11 +240,14 @@ document.addEventListener('DOMContentLoaded', () => {
       obj.appendChild(label);
       obj.appendChild(loadBar);
 
-      // Drag стола
+      obj.addEventListener('click', (e) => {
+        if (e.target.closest('.seat-dot')) return;
+        selectTable(table.id);
+      });
+
       obj.addEventListener('mousedown', (e) => startDragTable(e, table.id));
       obj.addEventListener('touchstart', (e) => startDragTable(e, table.id), { passive: false });
 
-      // Двойной клик — настройки стола
       obj.addEventListener('dblclick', (e) => {
         e.stopPropagation();
         openTableModal(table.id);
@@ -202,98 +257,276 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function createSeatDot(table, index, guestId) {
+  function createSeatDot(table, seatIndex, guestId, size) {
     const dot = document.createElement('div');
     dot.className = 'seat-dot' + (guestId ? ' occupied' : '');
+    dot.dataset.seatIndex = seatIndex;
+    dot.dataset.tableId = table.id;
+
     if (guestId) {
       const guest = getGuestById(guestId);
       dot.textContent = guest ? guest.name : '';
-      dot.title = guest ? guest.name : '';
+
+      dot.addEventListener('mouseenter', (e) => {
+        if (guest) showTooltip(guest, e.clientX, e.clientY);
+      });
+      dot.addEventListener('mouseleave', hideTooltip);
+      dot.addEventListener('touchstart', (e) => {
+        if (guest) {
+          showTooltip(guest, e.touches[0].clientX, e.touches[0].clientY);
+          setTimeout(hideTooltip, 2500);
+        }
+      }, { passive: true });
+
       dot.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const g = getGuestById(guestId);
-        if (g) {
-          g.tableId = null;
-          table.guestIds = table.guestIds.filter(id => id !== guestId);
-          renderAll();
+        if (draggedGuestId === null && draggedSeatIndex === null) {
+          e.stopPropagation();
+          const g = getGuestById(guestId);
+          if (g) {
+            g.tableId = null;
+            g.seatIndex = null;
+            table.guestIds[seatIndex] = null;
+            renderAll();
+          }
         }
       });
+
+      dot.draggable = true;
+      dot.addEventListener('dragstart', (e) => {
+        e.stopPropagation();
+        draggedGuestId = guestId;
+        draggedSeatTableId = table.id;
+        draggedSeatIndex = seatIndex;
+        dot.classList.add('dragging-seat');
+        e.dataTransfer.setData('text/plain', 'seat:' + guestId);
+      });
+      dot.addEventListener('dragend', () => {
+        dot.classList.remove('dragging-seat');
+      });
+
     } else {
       dot.textContent = '+';
+
       dot.addEventListener('dragover', (e) => { e.preventDefault(); dot.classList.add('highlight'); });
       dot.addEventListener('dragleave', () => dot.classList.remove('highlight'));
       dot.addEventListener('drop', (e) => {
         e.preventDefault();
         dot.classList.remove('highlight');
-        if (draggedGuestId !== null) {
-          const guest = getGuestById(draggedGuestId);
-          if (guest && guest.tableId) {
-            const oldTable = getTableById(guest.tableId);
-            if (oldTable) oldTable.guestIds = oldTable.guestIds.filter(id => id !== guest.id);
-          }
-          guest.tableId = table.id;
-          table.guestIds.push(guest.id);
-          draggedGuestId = null;
-          renderAll();
-        }
+        handleSeatDrop(table.id, seatIndex);
+        draggedGuestId = null;
+        draggedSeatTableId = null;
+        draggedSeatIndex = null;
+        renderAll();
       });
     }
-    const pos = getSeatPosition(table.type, table.capacity, index);
+
+    const pos = getSeatPosition(table.type, table.capacity, seatIndex, size);
     dot.style.left = pos.x + 'px';
     dot.style.top = pos.y + 'px';
     return dot;
   }
 
-  function getSeatPosition(type, capacity, index) {
+  function handleSeatDrop(targetTableId, targetSeatIndex) {
+    const targetTable = getTableById(targetTableId);
+    if (!targetTable) return;
+
+    if (draggedSeatTableId !== null && draggedSeatIndex !== null && draggedGuestId !== null) {
+      const sourceTable = getTableById(draggedSeatTableId);
+      
+      if (draggedSeatTableId === targetTableId && draggedSeatIndex === targetSeatIndex) return;
+
+      const displacedGuestId = targetTable.guestIds[targetSeatIndex];
+      const draggedId = draggedGuestId;
+
+      if (sourceTable) sourceTable.guestIds[draggedSeatIndex] = null;
+
+      if (displacedGuestId) {
+        const displacedGuest = getGuestById(displacedGuestId);
+        if (sourceTable) {
+          sourceTable.guestIds[draggedSeatIndex] = displacedGuestId;
+          if (displacedGuest) {
+            displacedGuest.tableId = sourceTable.id;
+            displacedGuest.seatIndex = draggedSeatIndex;
+          }
+        } else {
+          if (displacedGuest) {
+            displacedGuest.tableId = null;
+            displacedGuest.seatIndex = null;
+          }
+        }
+      }
+
+      targetTable.guestIds[targetSeatIndex] = draggedId;
+      const draggedGuest = getGuestById(draggedId);
+      if (draggedGuest) {
+        draggedGuest.tableId = targetTableId;
+        draggedGuest.seatIndex = targetSeatIndex;
+      }
+      return;
+    }
+
+    if (draggedGuestId !== null && draggedSeatTableId === null) {
+      const guest = getGuestById(draggedGuestId);
+      if (!guest) return;
+
+      if (targetTable.guestIds[targetSeatIndex]) {
+        const displacedGuest = getGuestById(targetTable.guestIds[targetSeatIndex]);
+        if (displacedGuest) {
+          displacedGuest.tableId = null;
+          displacedGuest.seatIndex = null;
+        }
+      }
+
+      if (guest.tableId) {
+        const oldTable = getTableById(guest.tableId);
+        if (oldTable) {
+          const oldIndex = oldTable.guestIds.indexOf(guest.id);
+          if (oldIndex !== -1) oldTable.guestIds[oldIndex] = null;
+        }
+      }
+
+      guest.tableId = targetTableId;
+      guest.seatIndex = targetSeatIndex;
+      targetTable.guestIds[targetSeatIndex] = guest.id;
+    }
+  }
+
+  function getSeatPosition(type, capacity, index, size) {
+    const w = size.w;
+    const h = size.h;
+
     if (type === 'round') {
-      const r = 55;
+      const r = w / 2 - 15;
+      const cx = w / 2;
+      const cy = h / 2;
       const angle = (index / capacity) * 2 * Math.PI - Math.PI / 2;
-      return { x: 70 + r * Math.cos(angle), y: 70 + r * Math.sin(angle) };
+      return { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
     }
     if (type === 'rect') {
-      const w = 200, h = 80;
-      if (capacity <= 4) {
-        const pos = [{ x: w/2, y: -12 }, { x: w + 12, y: h/2 }, { x: w/2, y: h + 12 }, { x: -12, y: h/2 }];
-        return pos[index] || { x: w/2, y: h/2 };
+      const perTop = Math.ceil(capacity / 4);
+      const perRight = Math.ceil(capacity / 4);
+      const perBottom = Math.ceil(capacity / 4);
+      const perLeft = capacity - perTop - perRight - perBottom;
+
+      if (index < perTop) {
+        const x = w / (perTop + 1) * (index + 1);
+        return { x, y: -12 };
       }
-      const pos = [
-        { x: w*0.25, y: -12 }, { x: w*0.75, y: -12 },
-        { x: w+12, y: h/2 },
-        { x: w*0.75, y: h+12 }, { x: w*0.25, y: h+12 },
-        { x: -12, y: h/2 }
-      ];
-      return pos[index] || { x: w/2, y: h/2 };
+      if (index < perTop + perRight) {
+        const i = index - perTop;
+        const y = h / (perRight + 1) * (i + 1);
+        return { x: w + 12, y };
+      }
+      if (index < perTop + perRight + perBottom) {
+        const i = index - perTop - perRight;
+        const x = w / (perBottom + 1) * (i + 1);
+        return { x, y: h + 12 };
+      }
+      const i = index - perTop - perRight - perBottom;
+      const y = h / (perLeft + 1) * (i + 1);
+      return { x: -12, y };
     }
     if (type === 'square') {
-      const s = 130;
       const perSide = Math.ceil(capacity / 4);
       const side = index % 4;
-      const offset = Math.floor(index / 4) * (s / (perSide + 1)) + s / (perSide + 1);
-      const pos = [
+      const offset = Math.floor(index / 4) * (w / (perSide + 1)) + w / (perSide + 1);
+      const positions = [
         { x: offset, y: -12 },
-        { x: s + 12, y: offset },
-        { x: s - offset, y: s + 12 },
-        { x: -12, y: s - offset }
+        { x: w + 12, y: offset },
+        { x: w - offset, y: h + 12 },
+        { x: -12, y: h - offset }
       ];
-      return pos[side] || { x: s/2, y: s/2 };
+      return positions[side] || { x: w/2, y: h/2 };
     }
     if (type === 'ushape') {
-      const w = 180, h = 140;
-      const pos = [
-        { x: -12, y: 25 }, { x: -12, y: h - 25 },
-        { x: w*0.25, y: -12 }, { x: w*0.75, y: -12 },
-        { x: w + 12, y: 25 }, { x: w + 12, y: h - 25 },
-        { x: w*0.25, y: h + 12 }, { x: w*0.75, y: h + 12 }
-      ];
-      return pos[index] || { x: w/2, y: h/2 };
+      // П-образный: места снаружи по трём сторонам, не внутри
+      const legWidth = w * 0.25;    // ширина ножек буквы П
+      const topY = -12;             // верхняя перекладина
+      const bottomY = h * 0.35;     // нижний край ножек (где заканчиваются)
+      const legLeftX = -12;         // левая ножка
+      const legRightX = w + 12;     // правая ножка
+      const topStartX = legWidth / 2;
+      const topEndX = w - legWidth / 2;
+
+      // Распределяем места: верх (3), левая ножка (2), правая ножка (2) — всего 7 базовых
+      // Если мест больше — добавляем по верху
+      const topCount = Math.min(capacity, 3 + Math.max(0, capacity - 7));
+      const leftCount = Math.min(capacity - topCount, Math.ceil((capacity - topCount) / 2));
+      const rightCount = capacity - topCount - leftCount;
+
+      if (index < topCount) {
+        const x = topStartX + (topEndX - topStartX) / (topCount + 1) * (index + 1);
+        return { x, y: topY };
+      }
+      const afterTop = index - topCount;
+      if (afterTop < leftCount) {
+        const y = bottomY / (leftCount + 1) * (afterTop + 1);
+        return { x: legLeftX, y };
+      }
+      const rightIdx = afterTop - leftCount;
+      const y = bottomY / (rightCount + 1) * (rightIdx + 1);
+      return { x: legRightX, y };
     }
-    return { x: 70, y: 70 };
+    return { x: w/2, y: h/2 };
   }
 
   function updateCounters() {
     const seated = guests.filter(g => g.tableId !== null).length;
     seatedCount.textContent = seated;
     totalCount.textContent = guests.length;
+  }
+
+  // ============ TOOLTIP ============
+  function showTooltip(guest, x, y) {
+    if (tooltipTimeout) clearTimeout(tooltipTimeout);
+    const tableName = guest.tableId ? getTableById(guest.tableId)?.name || '' : '';
+
+    guestTooltip.innerHTML = `
+      <div class="tooltip-name">${guest.name}</div>
+      ${guest.tags.length ? `<div class="tooltip-tags">${guest.tags.map(t => `<span class="tooltip-tag">${t}</span>`).join('')}</div>` : ''}
+      ${guest.description ? `<div class="tooltip-desc">${guest.description}</div>` : ''}
+      ${tableName ? `<div class="tooltip-table">🪑 ${tableName}</div>` : ''}
+    `;
+    guestTooltip.classList.remove('hidden');
+
+    const tw = guestTooltip.offsetWidth;
+    const th = guestTooltip.offsetHeight;
+    let left = x + 15;
+    let top = y - th / 2;
+    if (left + tw > window.innerWidth - 10) left = x - tw - 15;
+    if (top < 10) top = 10;
+    if (top + th > window.innerHeight - 10) top = window.innerHeight - th - 10;
+    guestTooltip.style.left = left + 'px';
+    guestTooltip.style.top = top + 'px';
+  }
+
+  function hideTooltip() {
+    tooltipTimeout = setTimeout(() => {
+      guestTooltip.classList.add('hidden');
+    }, 300);
+  }
+
+  // ============ SELECT TABLE ============
+  function selectTable(tableId) {
+    if (selectedTableId === tableId) {
+      selectedTableId = null;
+      tableScaleControls.style.display = 'none';
+    } else {
+      selectedTableId = tableId;
+      const table = getTableById(tableId);
+      tableScaleLabel.textContent = Math.round((table?.scale || 1) * 100) + '%';
+      tableScaleControls.style.display = 'flex';
+    }
+    renderAll();
+  }
+
+  function updateTableScale(delta) {
+    if (!selectedTableId) return;
+    const table = getTableById(selectedTableId);
+    if (!table) return;
+    table.scale = Math.max(0.5, Math.min(3, (table.scale || 1) + delta));
+    tableScaleLabel.textContent = Math.round(table.scale * 100) + '%';
+    renderAll();
   }
 
   // ============ DRAG TABLE ============
@@ -342,6 +575,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   zoomInBtn.addEventListener('click', () => setZoom(zoomLevel + 0.1));
   zoomOutBtn.addEventListener('click', () => setZoom(zoomLevel - 0.1));
+  tableScaleInBtn.addEventListener('click', () => updateTableScale(0.1));
+  tableScaleOutBtn.addEventListener('click', () => updateTableScale(-0.1));
+  deselectTableBtn.addEventListener('click', () => selectTable(selectedTableId));
+
+  document.getElementById('canvasWrapper').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget || (e.target.closest('.hall-canvas') && !e.target.closest('.table-object'))) {
+      if (selectedTableId) {
+        selectedTableId = null;
+        tableScaleControls.style.display = 'none';
+        renderAll();
+      }
+    }
+  });
 
   // ============ МОДАЛЬНЫЕ ОКНА ============
   function openGuestModal(id = null) {
@@ -369,7 +615,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const g = getGuestById(editingGuestId);
       if (g) { g.name = name; g.tags = tags; g.description = desc; }
     } else {
-      guests.push({ id: guestIdCounter++, name, tags, description: desc, tableId: null });
+      guests.push({ id: guestIdCounter++, name, tags, description: desc, tableId: null, seatIndex: null });
     }
     closeGuestModal();
     renderAll();
@@ -378,7 +624,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('modalCancel').addEventListener('click', closeGuestModal);
   guestModal.addEventListener('click', (e) => { if (e.target === guestModal) closeGuestModal(); });
 
-  // Table modal
   function openTableModal(id) {
     editingTableId = id;
     const table = getTableById(id);
@@ -397,12 +642,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const table = getTableById(editingTableId);
     if (!table) return;
     const newCapacity = parseInt(document.getElementById('modalTableCapacity').value);
-    if (table.guestIds.length > newCapacity) {
-      alert('Нельзя уменьшить вместимость: за столом больше гостей');
+    const filled = table.guestIds.filter(Boolean).length;
+    if (filled > newCapacity) {
+      alert(`Нельзя уменьшить вместимость: за столом ${filled} гостей`);
       return;
     }
     table.name = document.getElementById('modalTableName').value.trim() || table.name;
     table.capacity = newCapacity;
+    if (table.guestIds.length > newCapacity) {
+      table.guestIds = table.guestIds.slice(0, newCapacity);
+    } else if (table.guestIds.length < newCapacity) {
+      while (table.guestIds.length < newCapacity) table.guestIds.push(null);
+    }
     closeTableModal();
     renderAll();
   });
@@ -411,10 +662,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const table = getTableById(editingTableId);
     if (!table) return;
     table.guestIds.forEach(gid => {
-      const g = getGuestById(gid);
-      if (g) g.tableId = null;
+      if (gid) {
+        const g = getGuestById(gid);
+        if (g) { g.tableId = null; g.seatIndex = null; }
+      }
     });
     tables = tables.filter(t => t.id !== editingTableId);
+    if (selectedTableId === editingTableId) {
+      selectedTableId = null;
+      tableScaleControls.style.display = 'none';
+    }
     closeTableModal();
     renderAll();
   });
@@ -434,7 +691,8 @@ document.addEventListener('DOMContentLoaded', () => {
       capacity: 6,
       x: 60 + tables.length * 30,
       y: 250 + tables.length * 20,
-      guestIds: []
+      guestIds: new Array(6).fill(null),
+      scale: 1
     });
     renderAll();
   });
@@ -451,6 +709,83 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.addEventListener('dragover', e => e.preventDefault());
   document.addEventListener('drop', e => e.preventDefault());
+
+  // ============ СОХРАНЕНИЕ / ЗАГРУЗКА ============
+  function exportData() {
+    const data = {
+      guests: guests.map(g => ({
+        id: g.id,
+        name: g.name,
+        tags: g.tags,
+        description: g.description,
+        tableId: g.tableId,
+        seatIndex: g.seatIndex
+      })),
+      tables: tables.map(t => ({
+        id: t.id,
+        name: t.name,
+        type: t.type,
+        capacity: t.capacity,
+        x: t.x,
+        y: t.y,
+        guestIds: t.guestIds,
+        scale: t.scale
+      })),
+      guestIdCounter: guestIdCounter,
+      tableIdCounter: tableIdCounter
+    };
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'wedding-seating-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function importData(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const data = JSON.parse(e.target.result);
+        guests = data.guests || [];
+        tables = data.tables || [];
+        guestIdCounter = data.guestIdCounter || guests.length + 1;
+        tableIdCounter = data.tableIdCounter || tables.length + 1;
+        selectedTableId = null;
+        tableScaleControls.style.display = 'none';
+        renderAll();
+      } catch (err) {
+        alert('Ошибка загрузки файла. Проверьте формат.');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  // Добавляем кнопки в тулбар
+  const toolbarRight = document.querySelector('.toolbar-right');
+  
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'btn btn-tool';
+  saveBtn.textContent = '💾 Сохранить';
+  saveBtn.addEventListener('click', exportData);
+  
+  const loadBtn = document.createElement('button');
+  loadBtn.className = 'btn btn-tool';
+  loadBtn.textContent = '📂 Загрузить';
+  loadBtn.addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.addEventListener('change', (e) => {
+      if (e.target.files[0]) importData(e.target.files[0]);
+    });
+    input.click();
+  });
+
+  toolbarRight.prepend(loadBtn);
+  toolbarRight.prepend(saveBtn);
 
   // ============ ИНИЦИАЛИЗАЦИЯ ============
   initDemoData();

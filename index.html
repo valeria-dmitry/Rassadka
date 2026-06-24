@@ -11,50 +11,53 @@
 
   <div class="app-layout">
     
+    <!-- Боковая панель (на мобильных — нижний drawer) -->
     <aside class="sidebar" id="guestSidebar">
-      <div class="sidebar-header">
-        <h2>👥 Гости</h2>
-        <button class="btn btn-small" id="addGuestSidebarBtn">+ Добавить</button>
-      </div>
-      
-      <input type="text" class="search-input" id="guestSearch" placeholder="🔍 Поиск гостя...">
-      
-      <div class="tag-filter" id="tagFilterContainer"></div>
-      
-      <div class="guest-list" id="guestListContainer"></div>
-      
-      <div class="sidebar-footer">
-        <span id="seatedCount">0</span> / <span id="totalCount">0</span> гостей
+      <div class="sidebar-handle" id="sidebarHandle">☰ Гости</div>
+      <div class="sidebar-inner">
+        <div class="sidebar-header">
+          <h2>👥 Гости</h2>
+          <button class="btn btn-small" id="addGuestSidebarBtn">+</button>
+        </div>
+        
+        <input type="text" class="search-input" id="guestSearch" placeholder="🔍 Поиск...">
+        
+        <div class="tag-filter" id="tagFilterContainer"></div>
+        
+        <div class="guest-list" id="guestListContainer"></div>
+        
+        <div class="sidebar-footer">
+          <span id="seatedCount">0</span>/<span id="totalCount">0</span>
+        </div>
       </div>
     </aside>
 
     <main class="main-area">
       
       <div class="toolbar">
-        <div class="toolbar-left">
-          <button class="btn btn-tool" id="addTableBtn">🪑 Добавить стол</button>
+        <div class="toolbar-row">
+          <button class="btn btn-tool" id="addTableBtn">🪑 Стол</button>
           <div class="table-type-selector">
             <button class="btn btn-tool btn-shape active" data-shape="round" title="Круглый">⚪</button>
             <button class="btn btn-tool btn-shape" data-shape="rect" title="Прямоугольный">⬜</button>
             <button class="btn btn-tool btn-shape" data-shape="square" title="Квадратный">🔲</button>
             <button class="btn btn-tool btn-shape" data-shape="ushape" title="П-образный">🔳</button>
           </div>
-          <div class="zoom-controls">
-            <button class="btn btn-tool" id="zoomOut" title="Уменьшить всё">➖</button>
-            <span class="zoom-label" id="zoomLabel">100%</span>
-            <button class="btn btn-tool" id="zoomIn" title="Увеличить всё">➕</button>
-          </div>
-          <div class="table-scale-controls" id="tableScaleControls" style="display:none;">
-            <span class="scale-divider">|</span>
-            <span class="scale-label">Стол:</span>
-            <button class="btn btn-tool" id="tableScaleOut" title="Уменьшить стол">🔽</button>
-            <span class="zoom-label" id="tableScaleLabel">100%</span>
-            <button class="btn btn-tool" id="tableScaleIn" title="Увеличить стол">🔼</button>
-            <button class="btn btn-tool" id="deselectTableBtn" title="Снять выделение">✕</button>
-          </div>
         </div>
-        <div class="toolbar-right">
-          <span class="toolbar-hint">🖱 Двойной клик по столу — настройки. Клик — выделить</span>
+        <div class="toolbar-row">
+          <div class="zoom-controls">
+            <button class="btn btn-tool" id="zoomOut" title="Уменьшить">➖</button>
+            <span class="zoom-label" id="zoomLabel">100%</span>
+            <button class="btn btn-tool" id="zoomIn" title="Увеличить">➕</button>
+          </div>
+          <button class="btn btn-tool" id="saveBtn">💾</button>
+          <button class="btn btn-tool" id="loadBtn">📂</button>
+          <div class="table-scale-controls" id="tableScaleControls" style="display:none;">
+            <button class="btn btn-tool" id="tableScaleOut">🔽</button>
+            <span class="zoom-label" id="tableScaleLabel">100%</span>
+            <button class="btn btn-tool" id="tableScaleIn">🔼</button>
+            <button class="btn btn-tool" id="deselectTableBtn">✕</button>
+          </div>
         </div>
       </div>
 
@@ -70,8 +73,8 @@
     <div class="modal-card">
       <h3 id="modalTitle">Добавить гостя</h3>
       <input type="text" id="modalGuestName" placeholder="Имя гостя" maxlength="30">
-      <input type="text" id="modalGuestTags" placeholder="Теги через запятую (например: родственник, друзья)">
-      <textarea id="modalGuestDesc" placeholder="Описание (аллергии, заметки...)" rows="2"></textarea>
+      <input type="text" id="modalGuestTags" placeholder="Теги через запятую">
+      <textarea id="modalGuestDesc" placeholder="Описание" rows="2"></textarea>
       <div class="modal-buttons">
         <button class="btn btn-cancel" id="modalCancel">Отмена</button>
         <button class="btn btn-primary" id="modalSave">Сохранить</button>
@@ -94,13 +97,15 @@
       <div class="modal-buttons">
         <button class="btn btn-cancel" id="tableModalCancel">Отмена</button>
         <button class="btn btn-primary" id="tableModalSave">Сохранить</button>
-        <button class="btn btn-danger" id="tableModalDelete">Удалить стол</button>
+        <button class="btn btn-danger" id="tableModalDelete">Удалить</button>
       </div>
     </div>
   </div>
 
-  <!-- Тултип с описанием гостя -->
   <div class="guest-tooltip hidden" id="guestTooltip"></div>
+
+  <!-- Индикатор режима перемещения места -->
+  <div class="move-mode-toast hidden" id="moveModeToast">Нажмите на новое место для перемещения</div>
 
   <script src="script.js"></script>
 </body>

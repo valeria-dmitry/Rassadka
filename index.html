@@ -18,25 +18,19 @@
         <button class="btn btn-small" id="addGuestSidebarBtn">+ Добавить</button>
       </div>
       
-      <!-- Поиск -->
       <input type="text" class="search-input" id="guestSearch" placeholder="🔍 Поиск гостя...">
       
-      <!-- Фильтр по тегам -->
       <div class="tag-filter" id="tagFilterContainer"></div>
       
-      <!-- Список гостей -->
       <div class="guest-list" id="guestListContainer"></div>
       
-      <!-- Счётчики -->
       <div class="sidebar-footer">
         <span id="seatedCount">0</span> / <span id="totalCount">0</span> гостей
       </div>
     </aside>
 
-    <!-- Основная область: холст + панель столов -->
     <main class="main-area">
       
-      <!-- Панель инструментов -->
       <div class="toolbar">
         <div class="toolbar-left">
           <button class="btn btn-tool" id="addTableBtn">🪑 Добавить стол</button>
@@ -46,23 +40,25 @@
             <button class="btn btn-tool btn-shape" data-shape="square" title="Квадратный">🔲</button>
             <button class="btn btn-tool btn-shape" data-shape="ushape" title="П-образный">🔳</button>
           </div>
+          <div class="zoom-controls">
+            <button class="btn btn-tool" id="zoomOut" title="Уменьшить">➖</button>
+            <span class="zoom-label" id="zoomLabel">100%</span>
+            <button class="btn btn-tool" id="zoomIn" title="Увеличить">➕</button>
+          </div>
         </div>
         <div class="toolbar-right">
-          <span class="toolbar-hint">🖱 Перетаскивайте столы по залу</span>
+          <span class="toolbar-hint">🖱 Перетаскивайте столы. Двойной клик по столу — настройки</span>
         </div>
       </div>
 
-      <!-- Холст (зал) -->
-      <div class="canvas-wrapper">
-        <div class="hall-canvas" id="hallCanvas">
-          <!-- Столы рендерятся динамически -->
-        </div>
+      <div class="canvas-wrapper" id="canvasWrapper">
+        <div class="hall-canvas" id="hallCanvas"></div>
       </div>
 
     </main>
   </div>
 
-  <!-- Модальное окно: добавить/редактировать гостя -->
+  <!-- Модальное окно: гость -->
   <div class="modal-overlay hidden" id="guestModal">
     <div class="modal-card">
       <h3 id="modalTitle">Добавить гостя</h3>
@@ -76,7 +72,7 @@
     </div>
   </div>
 
-  <!-- Модальное окно: настройки стола -->
+  <!-- Модальное окно: стол -->
   <div class="modal-overlay hidden" id="tableModal">
     <div class="modal-card">
       <h3>Настройки стола</h3>

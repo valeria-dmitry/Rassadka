@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Планировщик рассадки гостей</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&family=Playfair+Display:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <div class="app-layout">
+    
+    <!-- Боковая панель гостей -->
+    <aside class="sidebar" id="guestSidebar">
+      <div class="sidebar-header">
+        <h2>👥 Гости</h2>
+        <button class="btn btn-small" id="addGuestSidebarBtn">+ Добавить</button>
+      </div>
+      
+      <!-- Поиск -->
+      <input type="text" class="search-input" id="guestSearch" placeholder="🔍 Поиск гостя...">
+      
+      <!-- Фильтр по тегам -->
+      <div class="tag-filter" id="tagFilterContainer"></div>
+      
+      <!-- Список гостей -->
+      <div class="guest-list" id="guestListContainer"></div>
+      
+      <!-- Счётчики -->
+      <div class="sidebar-footer">
+        <span id="seatedCount">0</span> / <span id="totalCount">0</span> гостей
+      </div>
+    </aside>
+
+    <!-- Основная область: холст + панель столов -->
+    <main class="main-area">
+      
+      <!-- Панель инструментов -->
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <button class="btn btn-tool" id="addTableBtn">🪑 Добавить стол</button>
+          <div class="table-type-selector">
+            <button class="btn btn-tool btn-shape active" data-shape="round" title="Круглый">⚪</button>
+            <button class="btn btn-tool btn-shape" data-shape="rect" title="Прямоугольный">⬜</button>
+            <button class="btn btn-tool btn-shape" data-shape="square" title="Квадратный">🔲</button>
+            <button class="btn btn-tool btn-shape" data-shape="ushape" title="П-образный">🔳</button>
+          </div>
+        </div>
+        <div class="toolbar-right">
+          <span class="toolbar-hint">🖱 Перетаскивайте столы по залу</span>
+        </div>
+      </div>
+
+      <!-- Холст (зал) -->
+      <div class="canvas-wrapper">
+        <div class="hall-canvas" id="hallCanvas">
+          <!-- Столы рендерятся динамически -->
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Модальное окно: добавить/редактировать гостя -->
+  <div class="modal-overlay hidden" id="guestModal">
+    <div class="modal-card">
+      <h3 id="modalTitle">Добавить гостя</h3>
+      <input type="text" id="modalGuestName" placeholder="Имя гостя" maxlength="30">
+      <input type="text" id="modalGuestTags" placeholder="Теги через запятую (например: родственник, друзья)">
+      <textarea id="modalGuestDesc" placeholder="Описание (аллергии, заметки...)" rows="2"></textarea>
+      <div class="modal-buttons">
+        <button class="btn btn-cancel" id="modalCancel">Отмена</button>
+        <button class="btn btn-primary" id="modalSave">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно: настройки стола -->
+  <div class="modal-overlay hidden" id="tableModal">
+    <div class="modal-card">
+      <h3>Настройки стола</h3>
+      <label>Название:</label>
+      <input type="text" id="modalTableName" placeholder="Название стола" maxlength="20">
+      <label>Максимум гостей:</label>
+      <select id="modalTableCapacity">
+        <option value="2">2</option><option value="3">3</option><option value="4">4</option>
+        <option value="5">5</option><option value="6" selected>6</option><option value="7">7</option>
+        <option value="8">8</option><option value="9">9</option>
+      </select>
+      <div class="modal-buttons">
+        <button class="btn btn-cancel" id="tableModalCancel">Отмена</button>
+        <button class="btn btn-primary" id="tableModalSave">Сохранить</button>
+        <button class="btn btn-danger" id="tableModalDelete">Удалить стол</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
